@@ -1,0 +1,96 @@
+name: Deploy research wiki to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Scheduled rebuild so canonical wiki changes reach the site without
+    # cross-repository secrets. Bounded publication delay: up to ~6 hours;
+    # use workflow_dispatch for immediate publication.
+    - cron: "37 1,7,13,19 * * *"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let a stale deployment race a newer one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out frontend repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out canonical wiki (read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: nbremner/llm-research-wiki
+          ref: main
+          path: .source-wiki
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Canonical graph lint
+        run: |
+          python .source-wiki/scripts/research-wiki-tools/graph_lint.py \
+            --wiki-dir .source-wiki/wiki \
+            --fail-on High
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Materialize Quartz plugins
+        # All plugins are npm packages pinned by package-lock.json; this
+        # regenerates the .quartz plugin index from quartz.config.yaml.
+        run: npm run install-plugins
+
+      - name: Publication adapter tests
+        run: npm run test:publication
+
+      - name: Generate content from canonical wiki
+        run: npm run prepare:content
+
+      - name: Verify publication boundary (pre-build)
+        run: npm run verify:publication -- --content-only --source .source-wiki/wiki
+
+      - name: Quartz checks
+        run: npm run check
+
+      - name: Production build
+        run: npx quartz build
+
+      - name: Verify publication boundary (content + public)
+        run: npm run verify:publication -- --source .source-wiki/wiki
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
