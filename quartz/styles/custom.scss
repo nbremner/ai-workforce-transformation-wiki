@@ -1,3 +1,48 @@
 @use "./variables.scss" as *;
 
-// put your custom CSS here!
+// Restrained refinements for long-form research reading.
+// Path-aware styling uses body[data-slug] only — no custom components.
+
+// --- Page-type kicker: subtle Topic / Source label above the title ---
+body[data-slug^="topics/"]:not([data-slug="topics/index"]),
+body[data-slug^="sources/"]:not([data-slug="sources/index"]) {
+  article h1:first-of-type::before {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--secondary);
+    opacity: 0.85;
+  }
+}
+
+body[data-slug^="topics/"]:not([data-slug="topics/index"]) article h1:first-of-type::before {
+  content: "Topic";
+}
+
+body[data-slug^="sources/"]:not([data-slug="sources/index"]) article h1:first-of-type::before {
+  content: "Source";
+}
+
+// --- Long-form reading comfort ---
+.center {
+  & p,
+  & li {
+    line-height: 1.65;
+  }
+
+  // Wide tables scroll inside their own container instead of breaking layout
+  & table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+// --- Accessibility: keep keyboard focus clearly visible ---
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}

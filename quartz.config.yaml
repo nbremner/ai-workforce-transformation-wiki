@@ -1,11 +1,23 @@
 # yaml-language-server: $schema=./quartz/plugins/quartz-plugins.schema.json
+#
+# Minimal Quartz plugin set for the public research wiki.
+# Deliberately omitted (see config/quartz-frontend-claude-handoff.md in the
+# canonical repo): created-modified-date, syntax-highlighting, latex,
+# citations, hard-line-breaks, ox-hugo, roam, themes, explicit-publish,
+# alias-redirects, og-image, cname, canvas-page, bases-page, tag-page,
+# tag-list, content-meta, unlisted-pages, encrypted-pages,
+# stacked-pages, comments, recent-notes, analytics.
+# note-properties IS enabled (it is Quartz 5's frontmatter transformer, required
+# for titles, the file trie, and folder listings) but with hidePropertiesView:
+# true so no frontmatter panel is displayed. article-title renders only on
+# folder pages (excluded for content pages, whose canonical body H1 is the
+# single title source).
 configuration:
-  pageTitle: Quartz 5
+  pageTitle: Nicholas Bremner — Research Wiki
   pageTitleSuffix: ""
   enableSPA: true
   enablePopovers: true
-  analytics:
-    provider: plausible
+  analytics: null
   locale: en-US
   baseUrl: nbremner.github.io/ai-workforce-transformation-wiki
   ignorePatterns:
@@ -41,38 +53,21 @@ configuration:
         highlight: rgba(143, 159, 169, 0.15)
         textHighlight: "#b3aa0288"
 plugins:
-  - source: "@quartz-community/created-modified-date"
+  - source: "@quartz-community/note-properties"
     enabled: true
     options:
-      defaultDateType: modified
-      priority:
-        - frontmatter
-        - git
-        - filesystem
-    order: 10
-  - source: "@quartz-community/syntax-highlighting"
-    enabled: true
-    options:
-      theme:
-        light: github-light
-        dark: github-dark
-      keepBackground: false
-    order: 20
+      includeAll: false
+      includedProperties: []
+      excludedProperties: []
+      hidePropertiesView: true
+      delimiters: "---"
+      language: yaml
+    order: 5
   - source: "@quartz-community/obsidian-flavored-markdown"
     enabled: true
     options:
-      comments: true
-      highlight: true
-      wikilinks: true
-      callouts: true
-      mermaid: true
-      parseTags: true
-      parseArrows: true
-      parseBlockReferences: true
       enableInHtmlEmbed: false
-      enableYouTubeEmbed: true
-      enableVideoEmbed: true
-      enableCheckbox: true
+      enableCheckbox: false
     order: 30
   - source: "@quartz-community/github-flavored-markdown"
     enabled: true
@@ -91,71 +86,20 @@ plugins:
   - source: "@quartz-community/description"
     enabled: true
     order: 70
-  - source: "@quartz-community/latex"
-    enabled: true
-    options:
-      renderEngine: katex
-    order: 80
-  - source: "@quartz-community/citations"
-    enabled: false
-    order: 85
-  - source: "@quartz-community/hard-line-breaks"
-    enabled: true
-    order: 90
-  - source: "@quartz-community/ox-hugo"
-    enabled: false
-    order: 91
-  - source: "@quartz-community/roam"
-    enabled: false
-    order: 92
   - source: "@quartz-community/quartz-fonts"
     enabled: true
-  - source: "@quartz-themes/core"
-    enabled: true
-    options:
-      theme: default
-      mode: both
   - source: "@quartz-community/remove-draft"
-    enabled: true
-  - source: "@quartz-community/explicit-publish"
-    enabled: false
-  - source: "@quartz-community/unlisted-pages"
-    enabled: true
-    options: {}
-    order: 45
-  - source: "@quartz-community/encrypted-pages"
-    enabled: true
-    options:
-      iterations: 600000
-      passwordField: password
-      unlistWhenEncrypted: false
-      outputPath: static/encryptedContentIndex.json
-  - source: "@quartz-community/stacked-pages"
-    enabled: false
-    layout:
-      position: afterBody
-      priority: 50
-      display: all
-  - source: "@quartz-community/alias-redirects"
     enabled: true
   - source: "@quartz-community/content-index"
     enabled: true
     options:
       enableSiteMap: true
-      enableRSS: true
+      enableRSS: false
   - source: "@quartz-community/favicon"
-    enabled: true
-  - source: "@quartz-community/og-image"
-    enabled: true
-  - source: "@quartz-community/cname"
-    enabled: true
-  - source: "@quartz-community/canvas-page"
     enabled: true
   - source: "@quartz-community/content-page"
     enabled: true
   - source: "@quartz-community/folder-page"
-    enabled: true
-  - source: "@quartz-community/tag-page"
     enabled: true
   - source: "@quartz-community/explorer"
     enabled: true
@@ -167,6 +111,7 @@ plugins:
     layout:
       position: right
       priority: 10
+      condition: in-topics
   - source: "@quartz-community/search"
     enabled: true
     layout:
@@ -180,21 +125,7 @@ plugins:
     layout:
       position: right
       priority: 50
-  - source: "@quartz-community/article-title"
-    enabled: true
-    layout:
-      position: beforeBody
-      priority: 10
-  - source: "@quartz-community/content-meta"
-    enabled: true
-    layout:
-      position: beforeBody
-      priority: 20
-  - source: "@quartz-community/tag-list"
-    enabled: false
-    layout:
-      position: beforeBody
-      priority: 30
+      condition: not-index
   - source: "@quartz-community/page-title"
     enabled: true
     layout:
@@ -212,31 +143,26 @@ plugins:
       position: left
       priority: 35
       group: toolbar
+  - source: "@quartz-community/article-title"
+    enabled: true
+    layout:
+      position: beforeBody
+      priority: 10
   - source: "@quartz-community/breadcrumbs"
     enabled: true
     layout:
       position: beforeBody
       priority: 5
       condition: not-index
-  - source: "@quartz-community/comments"
-    enabled: false
-    options:
-      provider: giscus
-      options: {}
-    layout:
-      position: afterBody
-      priority: 10
   - source: "@quartz-community/footer"
     enabled: true
     options:
       links:
-        GitHub: https://github.com/jackyzha0/quartz
-        Discord Community: https://discord.gg/cRFFHYye7t
+        Canonical wiki (GitHub): https://github.com/nbremner/llm-research-wiki
+        Site source (GitHub): https://github.com/nbremner/ai-workforce-transformation-wiki
     layout:
       position: footer
       priority: 50
-  - source: "@quartz-community/recent-notes"
-    enabled: false
   - source: "@quartz-community/spacer"
     enabled: true
     options: {}
@@ -245,27 +171,6 @@ plugins:
       position: left
       priority: 25
       display: mobile-only
-  - source: "@quartz-community/bases-page"
-    enabled: true
-    options: {}
-    order: 50
-  - source: "@quartz-community/note-properties"
-    enabled: true
-    options:
-      includeAll: false
-      includedProperties:
-        - description
-        - tags
-        - aliases
-      excludedProperties: []
-      hidePropertiesView: false
-      delimiters: ---
-      language: yaml
-    order: 5
-    layout:
-      position: beforeBody
-      priority: 15
-      display: all
 layout:
   groups:
     toolbar:
@@ -278,16 +183,11 @@ layout:
         beforeBody: []
         left: []
         right: []
-    content: {}
+    content:
+      exclude:
+        - "@quartz-community/article-title"
     folder:
       exclude:
-        - reader-mode
+        - "@quartz-community/reader-mode"
       positions:
         right: []
-    tag:
-      exclude:
-        - reader-mode
-      positions:
-        right: []
-    canvas: {}
-    bases: {}
