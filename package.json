@@ -1,6 +1,6 @@
 {
   "name": "@jackyzha0/quartz",
-  "description": "🌱 publish your digital garden and notes as a website",
+  "description": "\ud83c\udf31 publish your digital garden and notes as a website",
   "private": true,
   "version": "5.0.0",
   "type": "module",
@@ -19,7 +19,10 @@
     "test": "tsx --test",
     "profile": "0x -D prof ./quartz/bootstrap-cli.mjs build --concurrency=1",
     "install-plugins": "npx tsx ./quartz/plugins/loader/install-plugins.ts",
-    "prebuild": "npm run install-plugins"
+    "prebuild": "npm run install-plugins",
+    "prepare:content": "node scripts/prepare-content.mjs --source .source-wiki/wiki --dest content",
+    "verify:publication": "node scripts/verify-publication.mjs --content content --public public",
+    "test:publication": "node --test tests/*.test.mjs"
   },
   "engines": {
     "npm": ">=10.9.2",
