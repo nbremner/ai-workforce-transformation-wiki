@@ -11,3 +11,10 @@ private/
 replit.nix
 .quartz/
 quartz/cli/tui/dist/
+
+# Generated publication artifacts (built from canonical wiki at build time).
+# NOTE: content/ is deliberately NOT listed here — Quartz's content glob honors
+# .gitignore and would see zero input files. Instead, scripts/prepare-content.mjs
+# writes content/ into .git/info/exclude so git ignores it without hiding it
+# from the build. .source-wiki/ is safe to list (never globbed as content).
+.source-wiki/
