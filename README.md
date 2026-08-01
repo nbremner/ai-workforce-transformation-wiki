@@ -1,6 +1,6 @@
-# AI Workforce Transformation Wiki — public frontend
+# AI Workforce Transformation Wiki
 
-Public reading surface for Nicholas Bremner's research wiki on **AI workforce
+Public reading page for research wiki on scientific literature related to **AI workforce
 transformation × industrial–organizational psychology**.
 
 - **Live site:** <https://nbremner.github.io/ai-workforce-transformation-wiki/>
@@ -90,7 +90,6 @@ and the small condition registration in `quartz.ts`.
 
 ## Non-goals
 
-No semantic search, generated related links, MCP, `llms-full.txt`, comments,
+No semantic search, generated related links, comments,
 tag pages, recent notes, social-image generation, analytics, or Git-derived
-created/modified dates. The canonical wiki remains the single source of truth;
-this frontend stays a shallow, upgradeable adapter over it.
+created/modified dates.
