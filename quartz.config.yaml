@@ -13,8 +13,8 @@
 # folder pages (excluded for content pages, whose canonical body H1 is the
 # single title source).
 configuration:
-  pageTitle: Nicholas Bremner
-  pageTitleSuffix: " · Research Wiki"
+  pageTitle: AI Workforce Transformation Wiki
+  pageTitleSuffix: " · AI Workforce Transformation Wiki"
   enableSPA: true
   enablePopovers: true
   analytics: null

@@ -25,21 +25,11 @@ body[data-slug^="sources/"]:not([data-slug="sources/index"]) article h1:first-of
   content: "Source";
 }
 
-// --- Site title lockup: name + subtitle instead of one wrapping line ---
+// --- Site title: compact, balanced wrap ---
 .page-title {
-  font-size: 1.45rem;
-  line-height: 1.25;
-
-  a::after {
-    content: "Research Wiki";
-    display: block;
-    font-size: 0.85rem;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--gray);
-    margin-top: 0.15rem;
-  }
+  font-size: 1.35rem;
+  line-height: 1.3;
+  text-wrap: balance;
 }
 
 // --- Tighten the empty band above content (desktop) ---
