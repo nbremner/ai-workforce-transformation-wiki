@@ -70,6 +70,41 @@ function assertRegularFile(file) {
 }
 
 /**
+ * Read just the frontmatter title of a canonical file (for wikilink display
+ * resolution). Full validation happens later in transform().
+ */
+function titleOf(file) {
+  const raw = fs.readFileSync(file, "utf8")
+  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/)
+  if (!match) return undefined
+  try {
+    const parsed = YAML.parse(match[1])
+    return typeof parsed?.title === "string" ? parsed.title : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Give bare wikilinks a human-readable display alias: [[slug]] becomes
+ * [[slug|Page Title]] using the target's frontmatter title. Presentation-only —
+ * canonical files keep their bare-slug convention. Links that already have an
+ * alias, embeds, heading links, and unknown targets pass through unchanged.
+ */
+function resolveWikilinkTitles(body, titleMap, stats) {
+  return body.replace(
+    /(!?)\[\[([^\][|#]+)(#[^\][|]*)?(\|[^\][]*)?\]\]/g,
+    (whole, embed, target, heading, alias) => {
+      if (embed || alias) return whole
+      const title = titleMap.get(target.trim())
+      if (!title || title.includes("|") || title.includes("]")) return whole
+      stats.resolved += 1
+      return `[[${target}${heading ?? ""}|${title}]]`
+    },
+  )
+}
+
+/**
  * Strip only STRIPPED_KEYS from the frontmatter block, preserving every other
  * byte of the file. The block is validated with the yaml dependency before and
  * after the splice; any inconsistency fails the build rather than publishing
@@ -126,10 +161,13 @@ function transform(raw, file) {
   return `---\n${newFmText}\n---\n` + raw.slice(block.length)
 }
 
-function copyTransformed(srcFile, destFile) {
+function copyTransformed(srcFile, destFile, titleMap, stats) {
   assertRegularFile(srcFile)
   const raw = fs.readFileSync(srcFile, "utf8")
-  fs.writeFileSync(destFile, transform(raw, srcFile))
+  const stripped = transform(raw, srcFile)
+  const block = stripped.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n/)[0]
+  const body = resolveWikilinkTitles(stripped.slice(block.length), titleMap, stats)
+  fs.writeFileSync(destFile, block + body)
 }
 
 /**
@@ -181,17 +219,25 @@ function main() {
   const topicFiles = listMarkdown(topicsDir)
   const sourceFiles = listMarkdown(sourcesDir)
 
+  // Slug (shortest-path basename) -> frontmatter title, for link display.
+  const titleMap = new Map()
+  for (const file of [...topicFiles, ...sourceFiles]) {
+    const title = titleOf(file)
+    if (title) titleMap.set(path.basename(file, ".md"), title)
+  }
+  const stats = { resolved: 0 }
+
   ensureGitExclude(dest)
   fs.rmSync(dest, { recursive: true, force: true })
   fs.mkdirSync(path.join(dest, "topics"), { recursive: true })
   fs.mkdirSync(path.join(dest, "sources"), { recursive: true })
 
-  copyTransformed(overview, path.join(dest, "index.md"))
+  copyTransformed(overview, path.join(dest, "index.md"), titleMap, stats)
   for (const file of topicFiles) {
-    copyTransformed(file, path.join(dest, "topics", path.basename(file)))
+    copyTransformed(file, path.join(dest, "topics", path.basename(file)), titleMap, stats)
   }
   for (const file of sourceFiles) {
-    copyTransformed(file, path.join(dest, "sources", path.basename(file)))
+    copyTransformed(file, path.join(dest, "sources", path.basename(file)), titleMap, stats)
   }
 
   console.log(
@@ -200,6 +246,7 @@ function main() {
       `  source revision: ${sourceRevision(source)}`,
       `  topics: ${topicFiles.length}`,
       `  sources: ${sourceFiles.length}`,
+      `  wikilinks given display titles: ${stats.resolved}`,
       `  destination: ${dest}`,
     ].join("\n"),
   )

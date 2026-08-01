@@ -25,8 +25,64 @@ body[data-slug^="sources/"]:not([data-slug="sources/index"]) article h1:first-of
   content: "Source";
 }
 
+// --- Site title lockup: name + subtitle instead of one wrapping line ---
+.page-title {
+  font-size: 1.45rem;
+  line-height: 1.25;
+
+  a::after {
+    content: "Research Wiki";
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--gray);
+    margin-top: 0.15rem;
+  }
+}
+
+// --- Tighten the empty band above content (desktop) ---
+@media (min-width: 800px) {
+  .page > #quartz-body .sidebar {
+    padding-top: 2.5rem;
+  }
+
+  .page > #quartz-body .page-header {
+    margin-top: 2.5rem;
+  }
+}
+
+// --- Folder pages: capitalized title, calmer listing rhythm ---
+body[data-slug$="/index"] h1.article-title,
+.breadcrumb-container .breadcrumb-element a {
+  text-transform: capitalize;
+}
+
+.page-listing {
+  ul.section-ul {
+    margin-top: 1rem;
+  }
+
+  li.section-li {
+    margin-bottom: 0.35rem;
+
+    & > .section .desc h3 {
+      margin: 0.3rem 0;
+      font-size: 1.02rem;
+      font-weight: 500;
+    }
+  }
+}
+
 // --- Long-form reading comfort ---
 .center {
+  & article,
+  & .page-listing,
+  & .breadcrumb-container {
+    max-width: 46rem;
+  }
+
   & p,
   & li {
     line-height: 1.65;

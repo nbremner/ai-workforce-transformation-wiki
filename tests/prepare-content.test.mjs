@@ -94,7 +94,7 @@ test("all other frontmatter fields survive", () => {
   assert.equal(String(fm.updated), "2026-07-28")
 })
 
-test("markdown bodies and wikilinks survive byte-for-byte", () => {
+test("markdown bodies survive; only bare wikilinks gain display titles", () => {
   const tmp = makeTmp()
   const src = freshWiki(tmp)
   const dest = path.join(tmp, "content")
@@ -102,11 +102,60 @@ test("markdown bodies and wikilinks survive byte-for-byte", () => {
   assert.equal(res.status, 0, res.stderr)
   const outBody = body(path.join(dest, "topics", "example-topic.md"))
   const inBody = body(path.join(src, "topics", "example-topic.md"))
-  assert.equal(outBody, inBody)
-  assert.ok(outBody.includes("[[2026-example-source]]"))
+  // Everything except link display aliases is byte-identical: reversing the
+  // alias insertion must reproduce the canonical body exactly.
+  const unaliased = outBody.replace(/\[\[([^\][|]+)\|[^\][]*\]\]/g, "[[$1]]")
+  assert.equal(unaliased, inBody)
   assert.ok(outBody.includes("em dash — and “curly quotes”"))
+})
+
+test("bare wikilinks resolve to target frontmatter titles", () => {
+  const tmp = makeTmp()
+  const src = freshWiki(tmp)
+  const dest = path.join(tmp, "content")
+  const res = runAdapter(src, dest)
+  assert.equal(res.status, 0, res.stderr)
+  const topicBody = body(path.join(dest, "topics", "example-topic.md"))
+  assert.ok(
+    topicBody.includes("[[2026-example-source|An Example Source: With a Colon in the Title]]"),
+    topicBody,
+  )
+  assert.ok(!topicBody.includes("[[2026-example-source]]"))
+  const sourceBody = body(path.join(dest, "sources", "2026-example-source.md"))
+  assert.ok(sourceBody.includes("[[example-topic|Example topic]]"))
   const indexBody = body(path.join(dest, "index.md"))
-  assert.equal(indexBody, body(path.join(src, "overview.md")))
+  assert.ok(indexBody.includes("[[example-topic|Example topic]]"))
+})
+
+test("aliased, embedded, and unknown wikilinks pass through unchanged", () => {
+  const tmp = makeTmp()
+  const src = freshWiki(tmp)
+  fs.writeFileSync(
+    path.join(src, "topics", "link-forms.md"),
+    [
+      "---",
+      "title: Link forms",
+      "---",
+      "",
+      "# Link forms",
+      "",
+      "Already aliased: [[2026-example-source|my own label]].",
+      "Embed: ![[2026-example-source]].",
+      "Unknown target: [[no-such-page]].",
+      "Heading link: [[2026-example-source#key-claims]].",
+      "",
+    ].join("\n"),
+  )
+  const dest = path.join(tmp, "content")
+  const res = runAdapter(src, dest)
+  assert.equal(res.status, 0, res.stderr)
+  const out = body(path.join(dest, "topics", "link-forms.md"))
+  assert.ok(out.includes("[[2026-example-source|my own label]]"))
+  assert.ok(out.includes("![[2026-example-source]]"))
+  assert.ok(out.includes("[[no-such-page]]"))
+  assert.ok(
+    out.includes("[[2026-example-source#key-claims|An Example Source: With a Colon in the Title]]"),
+  )
 })
 
 test("schema.md and arbitrary extra directories are not copied", () => {
