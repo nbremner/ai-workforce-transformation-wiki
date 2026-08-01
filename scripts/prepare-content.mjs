@@ -9,6 +9,7 @@
  *
  * Allowlist (everything else is ignored, even if later added under wiki/):
  *   <source>/overview.md      -> <dest>/index.md
+ *   <source>/<map page>.md    -> <dest>/<map page>.md   (see MAP_PAGES)
  *   <source>/topics/*.md      -> <dest>/topics/*.md
  *   <source>/sources/*.md     -> <dest>/sources/*.md
  *
@@ -24,6 +25,11 @@ import { parseArgs } from "node:util"
 import YAML from "yaml"
 
 const STRIPPED_KEYS = ["drive_file_id", "file_hash"]
+
+// Living map pages published at the site root alongside the homepage.
+// Part of the canonical spine (see wiki/schema.md); the build fails loudly if
+// one is missing rather than silently publishing an incomplete map.
+const MAP_PAGES = ["topic-map.md", "open-questions.md", "research-gaps.md", "watchlist.md"]
 
 function fail(message) {
   console.error(`prepare-content: ${message}`)
@@ -175,6 +181,11 @@ function main() {
   const topicsDir = path.join(source, "topics")
   const sourcesDir = path.join(source, "sources")
   if (!fs.existsSync(overview)) fail(`missing required input: ${overview} (overview.md)`)
+  for (const name of MAP_PAGES) {
+    if (!fs.existsSync(path.join(source, name))) {
+      fail(`missing required map page: ${path.join(source, name)} (${name})`)
+    }
+  }
   if (!fs.existsSync(topicsDir)) fail(`missing required input directory: ${topicsDir} (topics)`)
   if (!fs.existsSync(sourcesDir)) fail(`missing required input directory: ${sourcesDir} (sources)`)
 
@@ -187,6 +198,9 @@ function main() {
   fs.mkdirSync(path.join(dest, "sources"), { recursive: true })
 
   copyTransformed(overview, path.join(dest, "index.md"))
+  for (const name of MAP_PAGES) {
+    copyTransformed(path.join(source, name), path.join(dest, name))
+  }
   for (const file of topicFiles) {
     copyTransformed(file, path.join(dest, "topics", path.basename(file)))
   }
@@ -198,6 +212,7 @@ function main() {
     [
       "prepare-content manifest",
       `  source revision: ${sourceRevision(source)}`,
+      `  map pages: ${MAP_PAGES.length}`,
       `  topics: ${topicFiles.length}`,
       `  sources: ${sourceFiles.length}`,
       `  destination: ${dest}`,

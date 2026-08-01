@@ -123,7 +123,34 @@ test("schema.md and arbitrary extra directories are not copied", () => {
   assert.ok(!fs.existsSync(path.join(dest, "schema.md")))
   assert.ok(!fs.existsSync(path.join(dest, "internal-notes")))
   const copied = fs.readdirSync(dest).sort()
-  assert.deepEqual(copied, ["index.md", "sources", "topics"])
+  assert.deepEqual(copied, [
+    "index.md",
+    "open-questions.md",
+    "research-gaps.md",
+    "sources",
+    "topic-map.md",
+    "topics",
+    "watchlist.md",
+  ])
+})
+
+test("map pages publish at the content root; a missing map page fails", () => {
+  const tmp = makeTmp()
+  const src = freshWiki(tmp)
+  const dest = path.join(tmp, "content")
+  const res = runAdapter(src, dest)
+  assert.equal(res.status, 0, res.stderr)
+  for (const name of ["topic-map.md", "open-questions.md", "research-gaps.md", "watchlist.md"]) {
+    assert.ok(fs.existsSync(path.join(dest, name)), `expected ${name} in content root`)
+  }
+  assert.match(res.stdout, /map pages:\s*4\b/)
+
+  const tmp2 = makeTmp()
+  const src2 = freshWiki(tmp2)
+  fs.rmSync(path.join(src2, "watchlist.md"))
+  const res2 = runAdapter(src2, path.join(tmp2, "content"))
+  assert.notEqual(res2.status, 0)
+  assert.match(res2.stderr, /watchlist\.md/)
 })
 
 test("malformed frontmatter fails the build", () => {

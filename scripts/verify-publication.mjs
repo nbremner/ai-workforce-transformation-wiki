@@ -17,6 +17,8 @@ import { parseArgs } from "node:util"
 import YAML from "yaml"
 
 const STRIPPED_KEYS = ["drive_file_id", "file_hash"]
+const MAP_PAGES = ["topic-map.md", "open-questions.md", "research-gaps.md", "watchlist.md"]
+const ROOT_FILES = ["index.md", ...MAP_PAGES]
 const errors = []
 
 function problem(message) {
@@ -43,15 +45,17 @@ function checkContent(contentDir, sourceDir) {
 
   for (const entry of entries) {
     if (entry.isSymbolicLink()) problem(`symlink in content/: ${entry.name}`)
-    if (entry.isFile() && entry.name !== "index.md") {
+    if (entry.isFile() && !ROOT_FILES.includes(entry.name)) {
       problem(`unexpected file in content/ root: ${entry.name}`)
     }
     if (entry.isDirectory() && !["topics", "sources"].includes(entry.name)) {
       problem(`unexpected directory in content/: ${entry.name}`)
     }
   }
-  if (!entries.some((entry) => entry.isFile() && entry.name === "index.md")) {
-    problem("content/index.md (homepage) is missing")
+  for (const name of ROOT_FILES) {
+    if (!entries.some((entry) => entry.isFile() && entry.name === name)) {
+      problem(`content/${name} is missing`)
+    }
   }
 
   const topics = fs.existsSync(path.join(contentDir, "topics"))
@@ -77,7 +81,7 @@ function checkContent(contentDir, sourceDir) {
   }
 
   const allFiles = [
-    path.join(contentDir, "index.md"),
+    ...ROOT_FILES.map((name) => path.join(contentDir, name)),
     ...topics.map((name) => path.join(contentDir, "topics", name)),
     ...sources.map((name) => path.join(contentDir, "sources", name)),
   ]
@@ -152,10 +156,15 @@ function checkPublic(publicDir, topics, sources) {
   // Expected page slugs, computed from the generated content (which is itself
   // checked against the canonical inputs above). No fixed page count.
   const expected = new Set(["index", "404", "topics", "sources", "topics/index", "sources/index"])
+  for (const name of MAP_PAGES) expected.add(name.replace(/\.md$/, ""))
   for (const name of topics) expected.add(`topics/${name.replace(/\.md$/, "")}`)
   for (const name of sources) expected.add(`sources/${name.replace(/\.md$/, "")}`)
 
   if (!fs.existsSync(path.join(publicDir, "index.html"))) problem("public/index.html missing")
+  for (const name of MAP_PAGES) {
+    const slug = name.replace(/\.md$/, "")
+    if (!pageExists(publicDir, slug)) problem(`map page missing in public/: ${slug}`)
+  }
   if (!pageExists(publicDir, "topics")) problem("topics folder page missing in public/")
   if (!pageExists(publicDir, "sources")) problem("sources folder page missing in public/")
   for (const name of topics) {
